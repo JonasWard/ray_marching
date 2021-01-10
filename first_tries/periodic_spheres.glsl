@@ -1,8 +1,8 @@
 // Gyroid Marching
 
 #define MAX_STEPS 500
-#define MAX_DIST 1000.
-#define SURF_DIST .0001
+#define MAX_DIST 10000.
+#define SURF_DIST .001
 
 # define PI 3.1415
 # define TAU 6.283185
@@ -12,47 +12,20 @@
 # define SESCALE 25.
 # define TERCALE 2.
 // # define SPHERERAD 10.0
-# define BOXSIZE 2.0
+# define BOXSIZE .5
 # define BANDHEIGHT .02
 # define DOUBLEBH .04
 # define SQUAREBH .0004
+
+# define SPHERESPACING 6.283185
 
 float rand(vec2 c){
 	return fract(sin(dot(c.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-float noise(vec2 p, float freq){
-	float unit = iResolution.x/freq;
-	vec2 ij = floor(p/unit);
-	vec2 xy = mod(p,unit)/unit;
-	//xy = 3.*xy*xy-2.*xy*xy*xy;
-	xy = .5*(1.-cos(PI*xy));
-	float a = rand((ij+vec2(0.,0.)));
-	float b = rand((ij+vec2(1.,0.)));
-	float c = rand((ij+vec2(0.,1.)));
-	float d = rand((ij+vec2(1.,1.)));
-	float x1 = mix(a, b, xy.x);
-	float x2 = mix(c, d, xy.x);
-	return mix(x1, x2, xy.y);
-}
-
-float pNoise(vec2 p, int res){
-	float persistance = .5;
-	float n = 0.;
-	float normK = 0.;
-	float f = 4.;
-	float amp = 1.;
-	int iCount = 0;
-	for (int i = 0; i<50; i++){
-		n+=amp*noise(p, f);
-		f*=2.;
-		normK+=amp;
-		amp*=persistance;
-		if (iCount == res) break;
-		iCount++;
-	}
-	float nf = n/normK;
-	return nf*nf*nf*nf;
+float sdPlane(vec3 p){
+    vec4 n = vec4(0, 0, 1, -.1);
+    return dot(p,n.xyz) + n.w;
 }
 
 mat2 Rot(float a) {
@@ -70,6 +43,23 @@ float sdSphere(vec3 p) {
     vec3 center = vec3(0);
     float radius = BOXSIZE;
     return length( (p - center) ) - radius;
+}
+
+vec3 boxMod(vec3 p){
+    return mod(vec3(p), SPHERESPACING) - SPHERESPACING * .5;
+}
+
+vec3 boxModAlternating(vec3 p){
+    vec3 modVec = mod(p, SPHERESPACING);
+    vec3 cell = mod( (p - modVec) / SPHERESPACING, 2.0) * 2.0 - 1.0;
+    float multiplier = cell.x * cell.y * cell.z;
+    vec3 temp = vec3(modVec.xy - SPHERESPACING * .5, modVec.z);
+    // return temp;
+    return vec3(multiplier * (temp.xy), temp.z); // - SPHERESPACING * .5;
+}
+
+float sdModSphere(vec3 p){
+    return sdSphere(boxMod(p) );
 }
 
 float sdBands(vec3 p) {
@@ -136,20 +126,35 @@ float sdGyroid(vec3 p, float scale) {
 	return d;
 }
 
-float GetDist(vec3 p) {
-    float t = iTime;
+vec3 polar2Dremap(vec3 p) {
+    return vec3(
+        sqrt(p.x * p.x + p.y * p.y),
+        atan(p.y, p.x),
+        p.z
+    );
+}
 
-    float d_g = SCALE * sdGyroid(p, SESCALE * sdGyroid(p, sdGyroid(p, TERCALE)));
-    float d_s = sdBox(p);
-    float d_b = sdBands(p);
+float sdGyroidPolar(vec3 p) {
+    return sdGyroid(polar2Dremap(boxModAlternating(p) ),10.);
+}
+
+float GetDist(vec3 p) {
+    // float t = iTime;
+
+    // float d_g = SCALE * sdGyroid(p, SESCALE * sdGyroid(p, sdGyroid(p, TERCALE)));
+    // float d_s = sdModSphere(p);
+    // float d_b = sdBands(p);
+    float d_p = sdPlane(p);
     // float d_s = sdCylinder(p);
     // float d_s = sdSphere(p);
     // intersection
-    float d = max(d_s, d_g);
+    // float d = max(d_p, d_g);
     // float d = max(d_s, d_g) + d_b;
     // bumping
     // float d = d_s + .4 * d_g + d_b;
+    // float d = d_s + .4 * d_g;
     // float d = sdGyroid(p);
+    float d = max(sdGyroidPolar(p), d_p);
 
     return d;
 }
@@ -159,7 +164,7 @@ float RayMarch(vec3 ro, vec3 rd) {
 
     for (int i = 0; i < MAX_STEPS; i++) {
         vec3 p = ro + rd * d0;
-        float dS = GetDist(p) * .2;
+        float dS = GetDist(p) * .05;
         d0 += dS;
 
         if (d0 > MAX_DIST || dS < SURF_DIST) break;
@@ -220,9 +225,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     // vec3 col = vec3(GetNormal(fragCoord) );
 
-    vec3 ro = vec3(0, 4, -5);
+    vec3 ro = vec3(10., 0, 0.);
     ro.yz *= Rot(-m.y + .4);
-    ro.xz *= Rot(5.3 - m.x * 6.2831);
+    ro.xz *= Rot(5.3 + m.x * TAU);
 
     vec3 rd = R(uv, ro, vec3(0), .58);
 
