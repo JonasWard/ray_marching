@@ -57,11 +57,16 @@ vec3 polar2Dremap(vec3 p) {
     );
 }
 
-vec3 calcHexGrid(vec3 p) {
-    const float hexHalfWidth = .5;
-    const float s = vec2(1, 1.7320508);
-    p = abs(p);
-    return max(dot
+// vec3 hexPolarRemap(vec3 p) {
+
+// }
+
+float calcHexDistance2D(vec2 p) {
+     const float hexHalfWidth= .5;
+     // 1.7320508 is sqrt(3)
+     const vec2 s = vec2(1, 1.7320508);
+     p = abs(p);
+     return max(dot(p, s * .5), p.x) - hexHalfWidth;
 }
 
 vec3 boxModAlternating(vec3 p){
