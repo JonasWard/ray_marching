@@ -1,59 +1,80 @@
 const float pi_invert = 0.3183098862;
-const float scale = .31415926536 * 8.;
+const float scale = .31415926536 * 10.;
 const float doubleScale = scale * 2.0;
+const float fluxScale = scale;
 
 const vec2 cellVec = vec2(doubleScale);
 const vec2 cellCenter = vec2(scale);
 
 const float pi = 3.1415926536;
 
-void forceDeuToCharge(vec2 p, vec2 charge, float magnitude, out vec2 addition) {
-    vec2 pDelta = p - charge;
-    addition += magnitude * pDelta / dot(pDelta, pDelta);
+vec3 hsv2rgb_smooth( in vec3 c )
+{
+    vec3 rgb = clamp( abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0, 0.0, 1.0 );
+
+	rgb = rgb*rgb*(3.0-2.0*rgb); // cubic smoothing	
+
+	return c.z * mix( vec3(1.0), rgb, c.y);
 }
 
-float fluxAngleFunction(vec2 p) {
+void forceDeuToCharge(vec2 p, vec2 charge, float magnitude, out vec2 addition) {
+    vec2 pDelta = p - charge;
+    addition += magnitude * pDelta / length(pDelta);
+}
+
+vec2 fluxFunction(vec2 p) {
     p /= scale * 2.;
 
-    vec2 pA = vec2 (-1,0.);
-    vec2 pB = vec2 (0,1);
-    vec2 pC = vec2 (1,0);
-    vec2 pD = vec2 (0,-1);
+    vec2 pA = vec2 (-1, 0.);
+    vec2 pB = vec2 (0, -1);
+    vec2 pC = vec2 (1, 0);
+    vec2 pD = vec2 (0, 1);
 
-    vec2 td = vec2(.0);
+    vec2 td = vec2(0.);
     forceDeuToCharge(p, pA, 1., td);
     forceDeuToCharge(p, pB, -1., td);
     forceDeuToCharge(p, pC, 1., td);
     forceDeuToCharge(p, pD, -1., td);
 
-    return atan(td.y,td.x);
+    return td;
 }
 
 float invertAngle(float angle, float direction) {
     return mod(pi + direction * angle, pi);
 }
 
+vec2 fluxToPolar(vec2 p, float direction) {
+    vec2 td = fluxFunction(p);
+    float angle = invertAngle(atan(td.y, td.x), direction);
+    float magnitude = length(td) * .71;
+
+    if (magnitude < 1.0) {
+        if (magnitude > 0.0) {
+            magnitude = magnitude;
+        } else {
+            magnitude = 0.0;
+        }
+    } else {
+        magnitude = 1.0;
+    }
+
+    return vec2(angle, magnitude * fluxScale);
+}
+
 vec2 uvMod(vec2 p, out float direction){
     vec2 modVec = mod(p, cellVec) - cellCenter;
 
-    vec2 cell = mod( (p - cellCenter - modVec) / doubleScale, 2.0) * 2.0 - 1.0;
-    direction = cell.x*cell.y;
+    vec2 cellIdx = mod( (p - cellCenter - modVec) / doubleScale, 2.0) * 2.0 - 1.0;
+    direction = cellIdx.x*cellIdx.y;
 
     return modVec;
-}
-
-vec2 angle2dRemap(vec2 p) {
-    float direction = 1.0;
-    vec2 np = uvMod(p, direction);
-    float angle = fluxAngleFunction(np);
-    return vec2(invertAngle(angle, direction), length(np) * max(abs(sin(angle)), abs(cos(angle))));
 }
 
 // Gyroid Marching
 
 #define MAX_STEPS 500
 #define MAX_DIST 10000.
-#define SURF_DIST .001
+#define SURF_DIST .0001
 
 # define PI 3.1415926536
 # define TAU 6.283185
@@ -82,7 +103,10 @@ float sdPlane(vec3 p){
 }
 
 vec3 magFluxRemapping(vec3 p) {
-    return vec3(angle2dRemap(p.xy), p.z);
+    float direction = 1.0;
+    vec2 polar = uvMod(p.xy, direction);
+    vec2 fluxVec = fluxToPolar(polar, direction);
+    return vec3(fluxVec, p.z);
 }
 
 float sdGyroid(vec3 p, float scale) {
@@ -102,7 +126,8 @@ float sdGyroidPolar(vec3 p) {
 float GetDist(vec3 p) {
     float d_p = sdPlane(p);
     float d = 0.0;
-    if (d_p < 0.01) {
+    // d = max(sdGyroidPolar(p), d_p);
+    if (d_p < 0.001) {
         d = max(sdGyroidPolar(p), d_p);
     } else {
         d = d_p;
