@@ -140,15 +140,15 @@ float GetDist(vec3 p) {
     float t = iTime;
 
     float d_g = SCALE * sdGyroid(p, SESCALE * sdGyroid(p, sdGyroid(p, TERCALE)));
-    float d_s = sdBox(p);
+    // float d_s = sdBox(p);
     float d_b = sdBands(p);
     // float d_s = sdCylinder(p);
-    // float d_s = sdSphere(p);
+    float d_s = sdSphere(p);
     // intersection
-    float d = max(d_s, d_g);
+    // float d = max(d_s, d_g);
     // float d = max(d_s, d_g) + d_b;
     // bumping
-    // float d = d_s + .4 * d_g + d_b;
+    float d = d_s + .4 * d_g + d_b;
     // float d = sdGyroid(p);
 
     return d;

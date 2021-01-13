@@ -1,7 +1,7 @@
 
 # define PI 3.1415
 # define SCALE 2.
-# define TIMESCALE .1
+# define TIMESCALE 10.
 # define SESCALE 10.0
 # define TERCALE 15.
 
