@@ -1,5 +1,5 @@
 const float pi_invert = 0.3183098862;
-const float scale = .1;
+const float scale = 100.;
 const float doubleScale = scale * 2.0;
 
 const vec2 cellVec = vec2(doubleScale);
@@ -14,16 +14,6 @@ vec3 hsv2rgb_smooth( in vec3 c )
 	rgb = rgb*rgb*(3.0-2.0*rgb); // cubic smoothing	
 
 	return c.z * mix( vec3(1.0), rgb, c.y);
-}
-
-float sdCircle(vec2 p, vec2 center) {
-    const float radius = .01;
-    float d = length( (p - center) ) / radius;
-    if (d > 1.0) {
-        return 1.0;
-    } else {
-        return d - 1.0;
-    }
 }
 
 void forceDeuToCharge(vec2 p, vec2 charge, float magnitude, out vec2 addition) {
@@ -51,25 +41,22 @@ float fluxAngleFunction(vec2 p, float direction) {
 vec2 uvMod(vec2 p, out float direction){
     vec2 modVec = mod(p, cellVec) - cellCenter;
 
-    vec2 cell = mod( (p - cellCenter - modVec) / doubleScale, 2.0) * 2.0 - 1.0;
-    direction = cell.x*cell.y;
+    vec2 cellIdx = mod( (p - cellCenter - modVec) / doubleScale, 2.0) * 2.0 - 1.0;
+    direction = cellIdx.x*cellIdx.y;
 
     return modVec;
 }
 
-float angleFunction(vec2 p) {
-    float direction = 1.0;
-    p = uvMod(p, direction);
-    return fluxAngleFunction(p, direction);
-}
-
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-	vec2 uv = vec2(fragCoord.x, fragCoord.y) / iResolution.xy;
-    vec2 m = iMouse.xy/ iResolution.xy;
-    
-    float angle = angleFunction(uv);
+    vec2 uv = fragCoord + vec2(5.);
 
-    fragColor = vec4(hsv2rgb_smooth( vec3(angle * pi_invert, 1, 1) ), 1.);
+    float direction = 1.0;
+    vec2 p = uvMod(uv, direction);
+    float angle = fluxAngleFunction(p, direction);
+    float l = length(p) / scale * .71;
+    l = 0.;
+
+    fragColor = vec4(hsv2rgb_smooth( vec3(angle * pi_invert, 1.-l, 1.) ), 1.);
 
 }
