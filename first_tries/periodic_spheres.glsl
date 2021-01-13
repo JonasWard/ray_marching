@@ -164,7 +164,7 @@ float RayMarch(vec3 ro, vec3 rd) {
 
     for (int i = 0; i < MAX_STEPS; i++) {
         vec3 p = ro + rd * d0;
-        float dS = GetDist(p) * .05;
+        float dS = GetDist(p) * .1;
         d0 += dS;
 
         if (d0 > MAX_DIST || dS < SURF_DIST) break;
