@@ -1,5 +1,5 @@
 const float pi_invert = 0.3183098862;
-const float scale = 100.;
+const float scale = 1000.;
 const float doubleScale = scale * 2.0;
 
 const vec2 cellVec = vec2(doubleScale);
@@ -21,13 +21,13 @@ void forceDeuToCharge(vec2 p, vec2 charge, float magnitude, out vec2 addition) {
     addition += magnitude * pDelta / dot(pDelta, pDelta);
 }
 
-float fluxAngleFunction(vec2 p, float direction) {
+vec2 fluxFunction(vec2 p) {
     p /= scale * 2.;
 
-    vec2 pA = vec2 (-1,0.);
-    vec2 pB = vec2 (0,1);
-    vec2 pC = vec2 (1,0);
-    vec2 pD = vec2 (0,-1);
+    vec2 pA = vec2 (-1, 0.);
+    vec2 pB = vec2 (0, -1);
+    vec2 pC = vec2 (1, 0);
+    vec2 pD = vec2 (0, 1);
 
     vec2 td = vec2(.0);
     forceDeuToCharge(p, pA, 1., td);
@@ -35,7 +35,19 @@ float fluxAngleFunction(vec2 p, float direction) {
     forceDeuToCharge(p, pC, 1., td);
     forceDeuToCharge(p, pD, -1., td);
 
-    return mod(pi + direction * atan(td.y,td.x), pi);
+    return td;
+}
+
+float invertAngle(float angle, float direction) {
+    return mod(pi + direction * angle, pi);
+}
+
+vec2 fluxToPolar(vec2 p, float direction) {
+    vec2 td = fluxFunction(p);
+    float angle = invertAngle(atan(td.y, td.x), direction);
+    float magnitude = length(td);
+
+    return vec2(angle, magnitude);
 }
 
 vec2 uvMod(vec2 p, out float direction){
@@ -53,10 +65,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     float direction = 1.0;
     vec2 p = uvMod(uv, direction);
-    float angle = fluxAngleFunction(p, direction);
-    float l = length(p) / scale * .71;
-    l = 0.;
+    vec2 fluxVec = fluxToPolar(p, direction);
 
-    fragColor = vec4(hsv2rgb_smooth( vec3(angle * pi_invert, 1.-l, 1.) ), 1.);
+    // fragColor = vec4(hsv2rgb_smooth( vec3(fluxVec.x * pi_invert, fluxVec.y, 1.) ), 1.);
+    fragColor = vec4(hsv2rgb_smooth( vec3(fluxVec.y * pi_invert, 1.0, 1.) ), 1.);
 
 }

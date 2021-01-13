@@ -1,5 +1,5 @@
 const float pi_invert = 0.3183098862;
-const float scale = 5.;
+const float scale = .31415926536 * 8.;
 const float doubleScale = scale * 2.0;
 
 const vec2 cellVec = vec2(doubleScale);
@@ -12,7 +12,7 @@ void forceDeuToCharge(vec2 p, vec2 charge, float magnitude, out vec2 addition) {
     addition += magnitude * pDelta / dot(pDelta, pDelta);
 }
 
-float fluxAngleFunction(vec2 p, float direction) {
+float fluxAngleFunction(vec2 p) {
     p /= scale * 2.;
 
     vec2 pA = vec2 (-1,0.);
@@ -45,8 +45,8 @@ vec2 uvMod(vec2 p, out float direction){
 vec2 angle2dRemap(vec2 p) {
     float direction = 1.0;
     vec2 np = uvMod(p, direction);
-    float angle = fluxAngleFunction(np, direction);
-    return vec2(invertAngle(angle), length(np) / max(sin(angle), cos(angle)));
+    float angle = fluxAngleFunction(np);
+    return vec2(invertAngle(angle, direction), length(np) * max(abs(sin(angle)), abs(cos(angle))));
 }
 
 // Gyroid Marching
