@@ -1,46 +1,26 @@
-// designing with planes
-   
-   
-   
-
-
-// Gyroid Marching
-
-const vec4[] plns_a = vec4[](
-    vec4(0.986412008763,0.162539413486,0.0239225423552,-0.511545764967),
-    vec4(-0.242400603769,-0.959063258391,0.146422722608,3.85777622777),
-    vec4(-0.855258669494,0.30556784867,-0.418522279113,1.88872489501)
-);
-const vec4[] plns_b = vec4[](
-    vec4(-0.852182201657,-0.438226582988,-0.285907252691,1.70633734462),
-    vec4(-0.195070758087,0.975483949628,-0.101874743473,3.96796435905),
-    vec4(0.949418579977,-0.257121046972,-0.180258501045,0.570284240345)
-);
-const vec4[] plns_c = vec4[](
-    vec4(-0.369274976854,0.822945365631,-0.431737092056,1.52086271622),
-    vec4(0.975625258361,-0.218861945911,0.0159625775046,2.63623059976),
-    vec4(-0.594164674406,-0.80385751337,0.0279542105544,0.48671165116)
-);
-const vec4 b_pln = vec4(.0, 0., -1., .0);
-
-#define MAX_STEPS 500
-#define MAX_DIST 10000.
-#define SURF_DIST .001
+#define MAX_STEPS 50000
+#define MAX_DIST 1000.
+#define SURF_DIST .000001
 
 # define PI 3.1415
 # define TAU 6.283185
-# define SCALE .5
+# define SCALE .2
 # define THICKNESS 1.0
 # define TIMESCALE .2
-# define SESCALE 25.
-# define TERCALE 2.
+# define SESCALE 2.
+# define TERCALE .512542
 // # define SPHERERAD 10.0
 # define BOXSIZE .5
+
+const vec4 b_pln = vec4(.0, 0., 1., 10.);
+const vec4 b_pln_ref = vec4(.0, 0., 1., 9.0);
+
 const float bandHeight = .05;
 const float doubleBH = 2. * bandHeight;
 const float squareBH = bandHeight * bandHeight;
 
-# define SPHERESPACING 6.283185
+const float voxScale = .25;
+const float voxScaleMult = 1. / voxScale;
 
 float sdPlane(vec3 p, vec4 pln){
     return dot(p,pln.xyz) + SCALE * pln.w;
@@ -74,33 +54,35 @@ float sdGyroid(vec3 p, float scale) {
 	return d;
 }
 
-float sdPlaneSet(vec3 p, vec4[3] plns) {
-    float d = MAX_DIST;
-    for(int i = 0; i < plns.length(); i++) {
-        float loc_d = sdPlane(p, plns[i]);
-        if (loc_d < d) {
-            d = loc_d;
-        }
-    }
-
-    return d;
+vec3 voxelizer(vec3 p) {
+    float vScale = (sdGyroid(p, SCALE) + 2.) * voxScale;
+    // return voxScale * round(p * voxScaleMult);
+    return vScale * round(p / vScale);
+    // return vec3(round(p.x), round(p.y), round(p.z));
 }
 
+
+
 float GetDist(vec3 p) {
-    // float d_g = sdGyroid(p, sdGyroid(p, SESCALE) );
-    // float b = sdBands(p);
-    float d_a = sdPlaneSet(p, plns_a);// + d_g * .04;
-    float d_b = sdPlaneSet(p, plns_b);// + d_g * .08;
-    float d_c = sdPlaneSet(p, plns_c);// + d_g * .1;
+    float d = sdPlane(p, b_pln_ref);
     float d_0 = sdPlane(p, b_pln);
 
-    float d = max(d_a, d_b);
-    d = max(d, d_c);
-    d = max(-d, d_0);
-    // d += b;
+    if (d > 0.) {
+        return d_0;
+    } else {
+        float d_g_p = sdGyroid(p, TERCALE) * .00001;
+
+        p = voxelizer(p);
+        float d_g = sdGyroid(p, sdGyroid(p, SESCALE) );
+        float d_0 = sdPlane(p, b_pln);
+
+        float d = max(d_g, d_0);
+
+        return d - d_g_p;
+    }
 
     // float d_g = sdGyroid(p, SCALE * sdGyroid(p, SESCALE) );
-    return min(d, 100.);
+    // return min(d, 100.);
 
     // return d_g + d;
 }
@@ -110,7 +92,7 @@ float RayMarch(vec3 ro, vec3 rd) {
 
     for (int i = 0; i < MAX_STEPS; i++) {
         vec3 p = ro + rd * d0;
-        float dS = GetDist(p) * .1;
+        float dS = GetDist(p) * .005;
         d0 += dS;
 
         if (d0 > MAX_DIST || dS < SURF_DIST) break;
