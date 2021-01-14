@@ -1,5 +1,5 @@
-#define MAX_STEPS 50000
-#define MAX_DIST 1000.
+#define MAX_STEPS 10000
+#define MAX_DIST 20.
 #define SURF_DIST .000001
 
 # define PI 3.1415
@@ -74,7 +74,6 @@ float GetDist(vec3 p) {
 
         p = voxelizer(p);
         float d_g = sdGyroid(p, sdGyroid(p, SESCALE) );
-        float d_0 = sdPlane(p, b_pln);
 
         float d = max(d_g, d_0);
 
@@ -92,7 +91,7 @@ float RayMarch(vec3 ro, vec3 rd) {
 
     for (int i = 0; i < MAX_STEPS; i++) {
         vec3 p = ro + rd * d0;
-        float dS = GetDist(p) * .005;
+        float dS = GetDist(p) * .001;
         d0 += dS;
 
         if (d0 > MAX_DIST || dS < SURF_DIST) break;
