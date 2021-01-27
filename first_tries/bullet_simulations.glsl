@@ -12,7 +12,7 @@
 # define SESCALE 25.
 # define TERCALE 2.
 // # define SPHERERAD 10.0
-# define BOXSIZE 2.0
+# define BOXSIZE 1.0
 # define BANDHEIGHT .02
 # define DOUBLEBH .04
 # define SQUAREBH .0004
@@ -145,7 +145,7 @@ const float bulletScale = .4;
 float GetDist(vec3 p) {
     float t = iTime;
 
-    float d_g = .1 *(1.+.2 * sdGyroid(p, bulletScale) );
+    float d_g = .2 *(1.+.2 * sdGyroid(p, bulletScale) );
     vec3 pPattern = 1. * recModZScales(p, d_g);
     float d_s = sdBox(p);
     float d_b = sdSphere(pPattern);
