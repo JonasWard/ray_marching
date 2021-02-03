@@ -12,7 +12,7 @@
 # define SESCALE 25.
 # define TERCALE 2.
 // # define SPHERERAD 10.0
-# define BOXSIZE 2.0
+# define BOXSIZE 4.0
 # define BANDHEIGHT .02
 # define DOUBLEBH .04
 # define SQUAREBH .0004
