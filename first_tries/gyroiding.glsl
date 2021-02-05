@@ -12,10 +12,12 @@
 # define SESCALE 25.
 # define TERCALE 2.
 // # define SPHERERAD 10.0
-# define BOXSIZE 4.0
+# define BOXSIZE 2.0
 # define BANDHEIGHT .02
 # define DOUBLEBH .04
 # define SQUAREBH .0004
+
+const vec3 ultramarine = vec3(18. / 255., 10. / 255., 143. / 255.);
 
 float rand(vec2 c){
 	return fract(sin(dot(c.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -116,16 +118,6 @@ float sdBox(vec3 p) {
     // return insideDistance + outsideDistance;
 }
 
-// float sdSphere(vec3 p) {
-//     vec4 s = vec4(10.0);
-    
-//     float sphereDist = length(p-s.xyz)-s.w;
-//     float planeDist = p.y;
-    
-//     float d = min(sphereDist, planeDist);
-//     return d;
-// }
-
 float sdGyroid(vec3 p, float scale) {
     p *= scale;
     float d = dot(sin(p), cos(p.yzx) );
@@ -136,19 +128,38 @@ float sdGyroid(vec3 p, float scale) {
 	return d;
 }
 
+float sdBoxHollow(vec3 p) {
+    float d_a = sdBox(p);
+    d_a += .4 * SCALE * sdGyroid(p, SESCALE * sdGyroid(p, sdGyroid(p, TERCALE)));
+    d_a -= sdBands(p);
+    float d_b = sdBox(vec3(p.xz * .999, p.y * 1.1) );
+    d_b += .4 * SCALE * sdGyroid(p, SESCALE * sdGyroid(p, sdGyroid(p, TERCALE)));
+    d_b += sdBands(p);
+
+    return max(-d_a, d_b);
+}
+
+// float sdSphere(vec3 p) {
+//     vec4 s = vec4(10.0);
+    
+//     float sphereDist = length(p-s.xyz)-s.w;
+//     float planeDist = p.y;
+    
+//     float d = min(sphereDist, planeDist);
+//     return d;
+// }
+
 float GetDist(vec3 p) {
     float t = iTime;
 
-    float d_g = SCALE * sdGyroid(p, SESCALE * sdGyroid(p, sdGyroid(p, TERCALE)));
     // float d_s = sdBox(p);
-    float d_b = sdBands(p);
     // float d_s = sdCylinder(p);
-    float d_s = sdSphere(p);
+    float d_s = sdBoxHollow(p);
     // intersection
     // float d = max(d_s, d_g);
     // float d = max(d_s, d_g) + d_b;
     // bumping
-    float d = d_s + .4 * d_g + d_b;
+    float d = d_s;
     // float d = sdGyroid(p);
 
     return d;
@@ -227,9 +238,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec3 rd = R(uv, ro, vec3(0), .58);
 
     float d = RayMarch(ro, rd);
-    vec3 p = ro + d*rd;
-    
-    vec3 n = vec3(.5) - GetNormal(p) * .5;
+    vec3 n;
+    if (d < 10.){
+        vec3 p = ro + d*rd;
+        // n = vec3(length(GetNormal(p)));
+        n = vec3(length(vec3(-.5) + GetNormal(p) * .5), 0., 0.);
+    } else {
+        n = ultramarine;
+    }
     // vec3 n2 = vec3( (abs(n.x) + abs(n.y) + abs(n.z) ) * .33333 );
     // vec3 n2 = n;
     // vec3 col = vec3( n2 );
