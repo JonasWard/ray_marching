@@ -131,7 +131,7 @@ vec3 dither(vec2 pos,vec3 color){
 	int x = int(mod(pos.x, 8.));
 	int y = int(mod(pos.y, 8.));
 	
-	int index = x + y * 8.;
+	int index = x + y * 8;
 
 	float bias = + 0.246; // This variable can be adjusted in range of -1 to 1 for more desirable result(Or maybe as a uniform);
 	
@@ -159,7 +159,6 @@ vec3 dither(vec2 pos,vec3 color){
 }
 
 void main(){
-	
 	vec2 UV = gl_FragCoord.xy / u_resolution.xy;
 	
 	vec4 color = texture2D(u_tex0, UV);

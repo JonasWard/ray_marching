@@ -70,7 +70,7 @@ float GetDist(vec3 p) {
     if (d > 0.) {
         return d_0;
     } else {
-        float d_g_p = sdGyroid(p, TERCALE) * .00001;
+        float d_g_p = sdGyroid(p, TERCALE) * .01;
 
         p = voxelizer(p);
         float d_g = sdGyroid(p, sdGyroid(p, SESCALE) );
@@ -91,7 +91,7 @@ float RayMarch(vec3 ro, vec3 rd) {
 
     for (int i = 0; i < MAX_STEPS; i++) {
         vec3 p = ro + rd * d0;
-        float dS = GetDist(p) * .001;
+        float dS = GetDist(p) * 1.;
         d0 += dS;
 
         if (d0 > MAX_DIST || dS < SURF_DIST) break;
