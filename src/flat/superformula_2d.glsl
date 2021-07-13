@@ -4,10 +4,10 @@ const float PI=3.141592;
 
 // Superformula Parameters
 const float n1=.5;
-const float n2=2.;
-const float n3=1.;
+const float n2=.45;
+const float n3=1.25;
 
-const float m=2.;
+const float m=2.0;
 
 const float aScaleValue=m/4.0;
 const float n1Inverse=-1./n1;
@@ -75,14 +75,14 @@ vec3 GetNormal() {
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
-{
+{//''//
     vec2 uv = (fragCoord) / iResolution.y;
     vec2 m = iMouse.xy/ iResolution.y;
 
     // vec3 col = vec3(GetNormal(fragCoord) );
     
     float d = GetDist(uv-m);
-    if (abs(d) <.001) {
+    if (abs(d) <.002) {
         fragColor=vec4(1.,0.,0.,1.);
     } else {
         fragColor=vec4(vec3(.5) - vec3(d) * .5, 1.);

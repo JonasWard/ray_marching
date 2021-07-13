@@ -2,17 +2,18 @@
 
 #define MAX_STEPS 500
 #define MAX_DIST 1000.
+#define BG_DIST 500.
 #define SURF_DIST .0001
 
 # define PI 3.1415
 # define TAU 6.283185
-# define SCALE .2
+# define SCALE 2.
 # define THICKNESS 1.0
 # define TIMESCALE .2
 # define SESCALE 25.
 # define TERCALE 2.
 // # define SPHERERAD 10.0
-# define BOXSIZE 1.0
+# define BOXSIZE 1.5
 # define BANDHEIGHT .02
 # define DOUBLEBH .04
 # define SQUAREBH .0004
@@ -20,6 +21,8 @@
 const float recSpacing = .5;
 const vec2 recVec = vec2(recSpacing);
 const vec2 halfRec = vec2(recSpacing * .5);
+
+const vec3 ultramarine = vec3(18. / 255., 10. / 255., 143./255.);
 
 mat2 Rot(float a) {
     float s = sin(a);
@@ -144,10 +147,14 @@ const float bulletScale = .4;
 
 float GetDist(vec3 p) {
     float t = iTime;
-
-    float d_g = .2 *(1.+.2 * sdGyroid(p, bulletScale) );
-    vec3 pPattern = 1. * recModZScales(p, d_g);
     float d_s = sdBox(p);
+    // float d_b = sdSphere(pPattern);
+
+    float d_g = sdGyroid(p, SESCALE * sdGyroid(p, SCALE));
+    // float d_g = .2 *(1.+.2 * sdGyroid(p, bulletScale) );
+    float d = max(d_s, d_g);
+    vec3 pPattern = 1. * recModZScales(p, d_g);
+    
     float d_b = sdSphere(pPattern);
     // float d_s = sdCylinder(p);
     // float d_s = sdSphere(p);
@@ -156,7 +163,7 @@ float GetDist(vec3 p) {
     // float d = max(d_s, d_g) + d_b;
     // bumping
     // float d = d_b;
-    float d = d_s + d_b;
+    // float d = d_s + d_b;
     // float d = sdGyroid(p);
 
     return d;
@@ -167,7 +174,7 @@ float RayMarch(vec3 ro, vec3 rd) {
 
     for (int i = 0; i < MAX_STEPS; i++) {
         vec3 p = ro + rd * d0;
-        float dS = GetDist(p) * .2;
+        float dS = GetDist(p) * .1;
         d0 += dS;
 
         if (d0 > MAX_DIST || dS < SURF_DIST) break;
@@ -235,22 +242,15 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec3 rd = R(uv, ro, vec3(0), .58);
 
     float d = RayMarch(ro, rd);
-    vec3 p = ro + d*rd;
-    
-    vec3 n = vec3(.5) - GetNormal(p) * .5;
-    // vec3 n2 = vec3( (abs(n.x) + abs(n.y) + abs(n.z) ) * .33333 );
-    // vec3 n2 = n;
-    // vec3 col = vec3( n2 );
 
-    // if (d < MAX_DIST) {
-    //     vec3 p = ro + rd * d;
-
-    //     float dif = GetLight(p);
-    //     col = vec3(dif);
-    // }
-
-
-    // col = pow(col, vec3(1.35));    // gamma correction
+    vec3 n;
+    if (d < BG_DIST) {
+        vec3 p = ro + d*rd;
+        n = vec3(.5) - GetNormal(p) * .5;
+        // n = vec3(length(n), .0, 0.);
+    } else {
+        n = ultramarine;
+    }
 
     fragColor = vec4(n, 1.);
 }
