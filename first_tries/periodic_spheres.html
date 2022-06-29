@@ -250,7 +250,7 @@ float sdPlane(vec3 p, vec4 pln){
     return dot(p,pln.xyz) + SCALE * pln.w;
 }
 
-float sdPlaneSet(vec3 p, vec4[3] plns) {
+float sdPlaneSet(vec3 p, vec4[6] plns) {
     float d = MAX_DIST;
     for(int i = 0; i < plns.length(); i++) {
         float loc_d = sdPlane(p, plns[i]);
@@ -263,41 +263,33 @@ float sdPlaneSet(vec3 p, vec4[3] plns) {
 }
 
 const vec4[] plns_a = vec4[](
-    vec4(0.986412008763,0.162539413486,0.0239225423552,-0.511545764967),
-    vec4(-0.242400603769,-0.959063258391,0.146422722608,3.85777622777),
-    vec4(-0.855258669494,0.30556784867,-0.418522279113,1.88872489501)
+    vec4(0.,0.,1.,5.),
+    vec4(0.,1.,0.,10.),
+    vec4(1.,0.,0.,5.),
+    vec4(0.,0.,-1.,5.),
+    vec4(0.,-1.,0.,10.),
+    vec4(-1.,0.,0.,5.)
 );
-const vec4[] plns_b = vec4[](
-    vec4(-0.852182201657,-0.438226582988,-0.285907252691,1.70633734462),
-    vec4(-0.195070758087,0.975483949628,-0.101874743473,3.96796435905),
-    vec4(0.949418579977,-0.257121046972,-0.180258501045,0.570284240345)
-);
-const vec4[] plns_c = vec4[](
-    vec4(-0.369274976854,0.822945365631,-0.431737092056,1.52086271622),
-    vec4(0.975625258361,-0.218861945911,0.0159625775046,2.63623059976),
-    vec4(-0.594164674406,-0.80385751337,0.0279542105544,0.48671165116)
-);
+
 const vec4 b_pln = vec4(.0, 0., -1., .0);
 
+float VolumeFunction(vec3 p) {
+    return sdGyroid(p, sdGyroid(vec3(p.x, p.y * .2, p.z), 5.) * 10.);
+}
+
+float SurfaceFunction(vec3 p) {
+    return sdGyroid(p, sdGyroid(p, 100.) ) * .1;
+}
+
 float GetDist(vec3 p) {
-    float d_g = sdGyroid(p, sdGyroid(p, 100.) );
-    // float b = sdBands(p);
-    float d_a = sdPlaneSet(p, plns_a) + d_g * .04;
-    float d_b = sdPlaneSet(p, plns_b) + d_g * .08;
-    float d_c = sdPlaneSet(p, plns_c) + d_g * .1;
-    float d_0 = sdPlane(p, b_pln);
+    float d_g = SurfaceFunction(p);
+    float d_p = -sdPlaneSet(p, plns_a);
 
-    float d_p = max(d_a, d_b);
-    d_p = max(d_p, d_c);
-    d_p = max(-d_p, d_0);
-    // d += b;
-
-    float d = max(sdGyroid(p, 10.), d_p);
+    float d = max(d_g + VolumeFunction(p), d_p);
 
     // float d_g = sdGyroid(p, SCALE * sdGyroid(p, SESCALE) );
-    return min(d, 100.);
 
-    // return d_g + d;
+    return min(d + sdBands(p), 100.);
 }
 
 float RayMarch(vec3 ro, vec3 rd) {
